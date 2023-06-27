@@ -18,7 +18,7 @@ namespace app8
                 ServicePointManager.Expect100Continue = true;
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-                var botClient = new TelegramBotClient("5605768673:AAFm3MRWTpIsE3s4GU_4C_YSmPJ3sBDasA8");
+                var botClient = new TelegramBotClient("XXXX");
                 botClient.StartReceiving(Update, Error);
 
                 Console.ReadLine();

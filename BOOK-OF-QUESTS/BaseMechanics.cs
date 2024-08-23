@@ -7,6 +7,8 @@ using Microsoft.Data.Sqlite;
 using System.Data;
 using Telegram.Bot.Types.Enums;
 using System.Globalization;
+using System.Diagnostics;
+using Qiwi.BillPayments.Web;
 
 namespace app8
 {
@@ -14,6 +16,7 @@ namespace app8
     {
         private static ParseMode _parseMode = new ParseMode();
         private static AdvController _advController = new AdvController();
+        public ReplyKeyboardMarkup _curKeyboard;
 
         // ТЕХНИЧЕСКИЕ ПЕРЕМЕННЫЕ (Кнопки, описания комнат и т.д)
         public string _сurGame = "0";
@@ -42,7 +45,7 @@ namespace app8
         public string _joinDate = "0";
         public string _payday = "false";
         public string _payLink = "false";
-        public string _url = "0";
+        public string showedEnergyEnd = "0";
         public string _paid = "0";
         public int _subnumberQuest = 1;
         public int _numBut1 = 1;
@@ -111,7 +114,7 @@ namespace app8
         // ГЛАВНОЕ МЕНЮ
         async public void StartbotChoosegame(ITelegramBotClient botClient, Message message)
         {
-            ReplyKeyboardMarkup replyKeyboardMarkup = new(new[] {
+            _curKeyboard = new(new[] {
                                 new KeyboardButton[] { "🏰 RPG" },
                                 new KeyboardButton[] { "☠️ Хоррор", "💋 18+" },
                                 new KeyboardButton[] { "🔘 Вернуться в Главное меню" },
@@ -124,16 +127,16 @@ namespace app8
                 chatId: message.Chat.Id,
                 photo: "https://github.com/thelightone/questgame/raw/main/categories.jpg",
                 caption: "Выберите категорию:",
-                replyMarkup: replyKeyboardMarkup);
+                replyMarkup: _curKeyboard);
         }
 
         async public void Сontiniue(ITelegramBotClient botClient, Message message)
         {
-            ReplyKeyboardMarkup replyKeyboardMarkup;
+
 
             if (_stageQuest == "0")
             {
-                replyKeyboardMarkup = new(new[]
+                _curKeyboard = new(new[]
                  {
                             new KeyboardButton[] {"🔘 Новая игра"},
                             new KeyboardButton[] {"👑 Подписка","☎️ Контакты"},
@@ -144,7 +147,7 @@ namespace app8
             }
             else
             {
-                replyKeyboardMarkup = new(new[]
+                _curKeyboard = new(new[]
                    {
                             new KeyboardButton[] {"🔘 Продолжить игру"},
                             new KeyboardButton[] {"🔘 Новая игра"},
@@ -154,23 +157,31 @@ namespace app8
                     ResizeKeyboard = true
                 };
             }
+            try
+            {
 
-            Message sentMessage = await botClient.SendPhotoAsync(
-                         chatId: message.Chat.Id,
-                         photo: "https://github.com/thelightone/questgame/raw/main/mainmenu.jpg",
-                         caption: "<b>BOOK OF QUESTS</b> - лучшие игры прямо в твоём Телеграм!" + "\n" + "\n" +
-                         "Жми <b>'Новая игра'</b> для начала ⬇️",
-                         _parseMode = ParseMode.Html,
-                         replyMarkup: replyKeyboardMarkup);
+                Message sentMessage = await botClient.SendPhotoAsync(
+                             chatId: message.Chat.Id,
+                             photo: "https://github.com/thelightone/questgame/raw/main/mainmenu.jpg",
+                             messageThreadId: null,
+                             caption: "<b>BOOK OF QUESTS</b> - лучшие игры прямо в твоём Телеграм!" + "\n" + "\n" +
+                             "Жми <b>'Новая игра'</b> для начала ⬇️",
+                             _parseMode = ParseMode.Html,
+                             replyMarkup: _curKeyboard);
+            }
+            catch
+            {
+
+            }
         }
 
         async public void СontiniueAlt(ITelegramBotClient botClient, Message message)
         {
-            ReplyKeyboardMarkup replyKeyboardMarkup;
+
 
             if (_stageQuest == "0")
             {
-                replyKeyboardMarkup = new(new[]
+                _curKeyboard = new(new[]
                 {
                             new KeyboardButton[] {"🔘 Новая игра"},
                             new KeyboardButton[] {"☎️ Контакты"},
@@ -181,7 +192,7 @@ namespace app8
             }
             else
             {
-                replyKeyboardMarkup = new(new[]
+                _curKeyboard = new(new[]
                 {
                             new KeyboardButton [] {"🔘 Продолжить игру"},
                             new KeyboardButton[] {"🔘 Новая игра"},
@@ -195,9 +206,10 @@ namespace app8
             Message sentMessage = await botClient.SendPhotoAsync(
                          chatId: message.Chat.Id,
                          photo: "https://github.com/thelightone/questgame/raw/main/mainmenu.jpg",
+                                                      messageThreadId: null,
                          caption: "<b>BOOK OF QUESTS</b> - лучшие игры прямо в твоём Телеграм!" + "\n" + "\n" +
                          "Жми <b>'Новая игра'</b> для начала ⬇️",
-                         _parseMode = ParseMode.Html, replyMarkup: replyKeyboardMarkup);
+                         _parseMode = ParseMode.Html, replyMarkup: _curKeyboard);
         }
 
         //ТЕЛО ИГРЫ
@@ -205,14 +217,13 @@ namespace app8
         {
             Database(botClient, message);
 
-            ReplyKeyboardMarkup replyKeyboardMarkup;
 
-            if (_url != "0" && _paid == "0")
+            if (showedEnergyEnd != "0" && _paid == "0")
             {
                 var psevdenergy = _energy - 1;
                 if (psevdenergy < 0) psevdenergy = 0;
 
-                replyKeyboardMarkup = new(new[]
+                _curKeyboard = new(new[]
                 {
                             new KeyboardButton[] { _but1TextQuest, _but3TextQuest },
                             new KeyboardButton[] { _but2TextQuest, _but4TextQuest },
@@ -224,7 +235,7 @@ namespace app8
             }
             else
             {
-                replyKeyboardMarkup = new(new[]
+                _curKeyboard = new(new[]
                 {
                             new KeyboardButton[] { _but1TextQuest, _but3TextQuest },
                             new KeyboardButton[] { _but2TextQuest, _but4TextQuest },
@@ -234,20 +245,21 @@ namespace app8
                 };
             }
 
+
             if (_photolinkQuest != "1")
             {
                 Message sentMessage = await botClient.SendPhotoAsync(
                     chatId: message.Chat.Id,
                     photo: _photolinkQuest,
                     caption: _textQuest,
-                    replyMarkup: replyKeyboardMarkup);
+                    replyMarkup: _curKeyboard);
             }
             else
             {
                 Message sentMessage = await botClient.SendTextMessageAsync(
                     chatId: message.Chat.Id,
                     _textQuest,
-                    replyMarkup: replyKeyboardMarkup);
+                    replyMarkup: _curKeyboard);
             }
 
             await Task.Delay(1000);
@@ -263,8 +275,9 @@ namespace app8
 
                 Message sentMessage = await botClient.SendTextMessageAsync(
                                chatId: message.Chat.Id,
-                               "" + _opChanShow + "", _parseMode = ParseMode.Html,
-                               disableWebPagePreview: true,
+                               "" + _opChanShow + "", (int?)(_parseMode = ParseMode.Html),
+
+                               linkPreviewOptions: true,
                                replyMarkup: inlineKeyboard);
 
                 IDbConnection dbcon2 = new SqliteConnection("Data Source=Savings.db");
@@ -380,21 +393,39 @@ namespace app8
 
         async public void SubCheck(ITelegramBotClient botClient, Message message)
         {
+
+            IDbConnection dbcon010 = new SqliteConnection("Data Source = Savings.db");
+
+            dbcon010.Open();
+            IDbCommand loading = dbcon010.CreateCommand();
+            loading.CommandText =
+                "SELECT * FROM Savings WHERE ChatId ='" + Convert.ToString(message.Chat.Id) + "' ";
+            IDataReader reader2 = loading.ExecuteReader();
+
+            reader2.Read();
+
+            _payday = reader2.GetString(16);
+
+            reader2.Dispose();
+            loading.Dispose();
+            dbcon010.Close();
+
             if (_payday == "false")
             {
-                var user_channel_status = await botClient.GetChatMemberAsync(-1001620051798, long.Parse(Convert.ToString(message.Chat.Id)), default);
-                if (user_channel_status.Status.ToString().ToLower() == "left"
-                 || user_channel_status.Status.ToString().ToLower() == "kicked")
-                {
-                    _paid = "0";
-                }
-                else
-                {
-                    _paid = "1";
-                    _url = "1";
-                }
+                //    var user_channel_status = await botClient.GetChatMemberAsync(-1001620051798, long.Parse(Convert.ToString(message.Chat.Id)), default);
+                //    if (user_channel_status.Status.ToString().ToLower() == "left"
+                //     || user_channel_status.Status.ToString().ToLower() == "kicked")
+                //    {
+                //        _paid = "0";
+                //    }
+                //    else
+                //    {
+                //        _paid = "1";
+                //        showedEnergyEnd = "1";
+                //    }
+                _paid = "0";
             }
-            else if (_payday == "2")
+            else
             {
                 var b = DateTime.Today;
 
@@ -423,7 +454,7 @@ namespace app8
             _energy = 11;
             SaveProgress(botClient, message);
 
-            ReplyKeyboardMarkup replyKeyboardMarkup = new(new[] { new KeyboardButton[] { "🔘 Продолжить игру" }, })
+            _curKeyboard = new(new[] { new KeyboardButton[] { "🔘 Продолжить игру" }, })
             {
                 ResizeKeyboard = true
             };
@@ -431,8 +462,8 @@ namespace app8
             Message sentMessage = await botClient.SendTextMessageAsync(
                     chatId: message.Chat.Id,
                     text: "Ваша ⚡️Энергия  восстановлена!",
-                    _parseMode = ParseMode.Html,
-                    replyMarkup: replyKeyboardMarkup);
+                    (int?)(_parseMode = ParseMode.Html),
+                    replyMarkup: _curKeyboard);
         }
 
 
@@ -514,12 +545,17 @@ namespace app8
         public void Database(ITelegramBotClient botClient, Message message)
 
         {
+            if (_stageQuest == "0")
+            {
+                return;
+            }
+
             IDbConnection dbcon = new SqliteConnection("Data Source=databaseforapp8.db");
             dbcon.Open();
 
             IDbCommand dbcmd = dbcon.CreateCommand();
             dbcmd.CommandText = "SELECT * FROM app8database WHERE Number ='" + _stageQuest + "' ";
-
+            Debug.WriteLine(_stageQuest);
             IDataReader reader = dbcmd.ExecuteReader();
             reader.Read();
             _condition = reader.GetString(20);
@@ -675,7 +711,7 @@ namespace app8
             savegame3.Parameters.Add(new SqliteParameter("@monsterdead", _monsterDead.ToString()));
             savegame3.Parameters.Add(new SqliteParameter("@pay_link", _payLink.ToString()));
             savegame3.Parameters.Add(new SqliteParameter("@payday", _payday.ToString()));
-            savegame3.Parameters.Add(new SqliteParameter("@url", _url.ToString()));
+            savegame3.Parameters.Add(new SqliteParameter("@url", showedEnergyEnd.ToString()));
             savegame3.Parameters.Add(new SqliteParameter("@havestones", _haveStones.ToString()));
             savegame3.Parameters.Add(new SqliteParameter("@haveshovel", _haveShovel.ToString()));
             savegame3.Parameters.Add(new SqliteParameter("@havemeet", _haveMeet.ToString()));
@@ -741,230 +777,236 @@ namespace app8
 
         public void Initial(ITelegramBotClient botClient, Message message)
         {
-            IDbConnection dbcon05 = new SqliteConnection("Data Source = Savings.db");
-
-            dbcon05.Open();
-            IDbCommand firstsave = dbcon05.CreateCommand();
-            firstsave.CommandText = "SELECT count(*) FROM Savings WHERE ChatId='" + Convert.ToString(message.Chat.Id) + "'";
-            int count = Convert.ToInt32(firstsave.ExecuteScalar());
-            firstsave.Dispose();
-            dbcon05.Close();
-
-            if (count == 0)
+            if (message != null)
             {
-                IDbConnection dbcon09 = new SqliteConnection("Data Source = Savings.db");
+                if (message.Text != null)
+                {
+                    IDbConnection dbcon05 = new SqliteConnection("Data Source = Savings.db");
 
-                dbcon09.Open();
-                IDbCommand firstsave2 = dbcon09.CreateCommand();
-                firstsave2.CommandText = "INSERT INTO Savings (ChatId, Stagequest, HaveFire, HaveKey, SolvedQuest, havestick1, havestick2, havestick0, CurGame, invitation, paid, oskolok, stranger, sdelkaotkaz, monsterdead, pay_link, payday, url, havestones, haveshovel, havemeet, fisher, mistake, haveplant, ask, findfigure, checktable, checkbed, checkkomod, stayhome, checkkitch, checkall, energy, refblockon, source, joindate)" +
-                "VALUES (@ChatId, @Stagequest, @HaveFire, @HaveKey, @SolvedQuest, @havestick1, @havestick2, @havestick0, @CurGame, @invitation, @paid, @oskolok, @stranger, @sdelkaotkaz, @monsterdead, @pay_link, @payday, @url, @havestones, @haveshovel, @havemeet, @fisher, @mistake, @haveplant, @ask, @findfigure, @checktable, @checkbed, @checkkomod, @stayhome, @checkkitch, @checkall, @energy, @refblockon, @source, @joindate)";
-                firstsave2.Parameters.Add(new SqliteParameter("@ChatId", Convert.ToString(message.Chat.Id)));
-                firstsave2.Parameters.Add(new SqliteParameter("@Stagequest", "0"));
-                firstsave2.Parameters.Add(new SqliteParameter("@HaveFire", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@HaveKey", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@SolvedQuest", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@havestick1", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@havestick2", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@havestick0", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@CurGame", "0"));
-                firstsave2.Parameters.Add(new SqliteParameter("@invitation", "0"));
-                firstsave2.Parameters.Add(new SqliteParameter("@paid", "0"));
-                firstsave2.Parameters.Add(new SqliteParameter("@oskolok", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@stranger", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@sdelkaotkaz", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@monsterdead", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@pay_link", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@payday", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@url", "0"));
-                firstsave2.Parameters.Add(new SqliteParameter("@havestones", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@haveshovel", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@havemeet", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@fisher", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@mistake", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@haveplant", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@ask", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@findfigure", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@checktable", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@checkbed", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@checkkomod", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@stayhome", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@checkkitch", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@checkall", "false"));
-                firstsave2.Parameters.Add(new SqliteParameter("@energy", "0"));
-                firstsave2.Parameters.Add(new SqliteParameter("@refblockon", "0"));
-                firstsave2.Parameters.Add(new SqliteParameter("@source", "0"));
-                firstsave2.Parameters.Add(new SqliteParameter("@joindate", "0"));
+                    dbcon05.Open();
+                    IDbCommand firstsave = dbcon05.CreateCommand();
+                    firstsave.CommandText = "SELECT count(*) FROM Savings WHERE ChatId='" + Convert.ToString(message.Chat.Id) + "'";
+                    int count = Convert.ToInt32(firstsave.ExecuteScalar());
+                    firstsave.Dispose();
+                    dbcon05.Close();
 
-                firstsave2.ExecuteNonQuery();
-                firstsave2.Dispose();
-                dbcon09.Close();
+                    if (count == 0)
+                    {
+                        IDbConnection dbcon09 = new SqliteConnection("Data Source = Savings.db");
+
+                        dbcon09.Open();
+                        IDbCommand firstsave2 = dbcon09.CreateCommand();
+                        firstsave2.CommandText = "INSERT INTO Savings (ChatId, Stagequest, HaveFire, HaveKey, SolvedQuest, havestick1, havestick2, havestick0, CurGame, invitation, paid, oskolok, stranger, sdelkaotkaz, monsterdead, pay_link, payday, url, havestones, haveshovel, havemeet, fisher, mistake, haveplant, ask, findfigure, checktable, checkbed, checkkomod, stayhome, checkkitch, checkall, energy, refblockon, source, joindate)" +
+                        "VALUES (@ChatId, @Stagequest, @HaveFire, @HaveKey, @SolvedQuest, @havestick1, @havestick2, @havestick0, @CurGame, @invitation, @paid, @oskolok, @stranger, @sdelkaotkaz, @monsterdead, @pay_link, @payday, @url, @havestones, @haveshovel, @havemeet, @fisher, @mistake, @haveplant, @ask, @findfigure, @checktable, @checkbed, @checkkomod, @stayhome, @checkkitch, @checkall, @energy, @refblockon, @source, @joindate)";
+                        firstsave2.Parameters.Add(new SqliteParameter("@ChatId", Convert.ToString(message.Chat.Id)));
+                        firstsave2.Parameters.Add(new SqliteParameter("@Stagequest", "0"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@HaveFire", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@HaveKey", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@SolvedQuest", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@havestick1", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@havestick2", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@havestick0", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@CurGame", "0"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@invitation", "0"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@paid", "0"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@oskolok", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@stranger", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@sdelkaotkaz", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@monsterdead", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@pay_link", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@payday", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@url", "0"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@havestones", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@haveshovel", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@havemeet", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@fisher", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@mistake", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@haveplant", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@ask", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@findfigure", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@checktable", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@checkbed", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@checkkomod", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@stayhome", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@checkkitch", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@checkall", "false"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@energy", "0"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@refblockon", "0"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@source", "0"));
+                        firstsave2.Parameters.Add(new SqliteParameter("@joindate", "0"));
+
+                        firstsave2.ExecuteNonQuery();
+                        firstsave2.Dispose();
+                        dbcon09.Close();
+                    }
+
+                    IDbConnection dbcon010 = new SqliteConnection("Data Source = Savings.db");
+
+                    dbcon010.Open();
+                    IDbCommand loading = dbcon010.CreateCommand();
+                    loading.CommandText =
+                        "SELECT * FROM Savings WHERE ChatId ='" + Convert.ToString(message.Chat.Id) + "' ";
+                    IDataReader reader2 = loading.ExecuteReader();
+                    Console.WriteLine("6");
+                    reader2.Read();
+
+                    _stageQuest = reader2.GetString(1);
+                    _haveFire = Convert.ToBoolean(reader2.GetString(2));
+                    _haveKey = Convert.ToBoolean(reader2.GetString(3));
+                    _solvedQuest = Convert.ToBoolean(reader2.GetString(4));
+                    _haveStick1 = Convert.ToBoolean(reader2.GetString(5));
+                    _haveStick2 = Convert.ToBoolean(reader2.GetString(6));
+                    _haveStick0 = Convert.ToBoolean(reader2.GetString(7));
+                    _сurGame = reader2.GetString(8);
+                    _invitation = reader2.GetString(9);
+                    _paid = reader2.GetString(10);
+                    _oskolok = Convert.ToBoolean(reader2.GetString(11));
+                    _stranger = Convert.ToBoolean(reader2.GetString(12));
+                    _sdelkaOtkaz = Convert.ToBoolean(reader2.GetString(13));
+                    _monsterDead = Convert.ToBoolean(reader2.GetString(14));
+                    _payLink = reader2.GetString(15);
+                    _payday = reader2.GetString(16);
+                    showedEnergyEnd = reader2.GetString(17);
+                    _haveStones = Convert.ToBoolean(reader2.GetString(18));
+                    _haveShovel = Convert.ToBoolean(reader2.GetString(19));
+                    _haveMeet = Convert.ToBoolean(reader2.GetString(20));
+                    _fisher = Convert.ToBoolean(reader2.GetString(21));
+                    _mistake = Convert.ToBoolean(reader2.GetString(22));
+                    _havePlant = Convert.ToBoolean(reader2.GetString(23));
+                    _ask = Convert.ToBoolean(reader2.GetString(24));
+                    _findFigure = Convert.ToBoolean(reader2.GetString(25));
+                    _checkTable = Convert.ToBoolean(reader2.GetString(26));
+                    _checkBed = Convert.ToBoolean(reader2.GetString(27));
+                    _checkKomod = Convert.ToBoolean(reader2.GetString(28));
+                    _stayHome = Convert.ToBoolean(reader2.GetString(29));
+                    _checkKitch = Convert.ToBoolean(reader2.GetString(30));
+                    _checkAll = Convert.ToBoolean(reader2.GetString(31));
+                    _energy = Convert.ToInt32(reader2.GetInt32(32));
+                    _refBlockOn = Convert.ToInt32(reader2.GetInt32(33));
+                    _source = reader2.GetString(34);
+                    _joinDate = reader2.GetString(35);
+
+                    reader2.Dispose();
+                    loading.Dispose();
+                    dbcon010.Close();
+
+                    IDbConnection dbcon012 = new SqliteConnection("Data Source = Savings.db");
+                    dbcon012.Open();
+
+                    IDbCommand players = dbcon012.CreateCommand();
+                    players.CommandText = "SELECT count(*) FROM Savings";
+                    _playersTotal = Convert.ToInt32(players.ExecuteScalar());
+                    players.Dispose();
+
+                    SetupOP(dbcon012, _opChan1, _opChanName1, _opBut1, "'op1'");
+                    SetupOP(dbcon012, _opChan2, _opChanName2, _opBut2, "'op2'");
+                    SetupOP(dbcon012, _opChan3, _opChanName3, _opBut3, "'op3'");
+                    SetupOP(dbcon012, _opChan4, _opChanName4, _opBut4, "'op4'");
+
+                    IDbCommand opcheckshow = dbcon012.CreateCommand();
+                    opcheckshow.CommandText = "SELECT * FROM op WHERE opnum LIKE 'opshow'";
+                    IDataReader opreadershow = opcheckshow.ExecuteReader();
+                    opreadershow.Read();
+                    _opChanShow = opreadershow.GetString(1); ;
+                    _opChanNameShow = opreadershow.GetString(2);
+                    _opButShow = opreadershow.GetString(3);
+                    _opChanShowUrl = "0";
+                    _opChanShowBut = "0";
+
+                    if (_opChanNameShow.Contains("₽"))
+                    {
+                        _opChanShowUrl = _opChanNameShow.Substring(0, _opChanNameShow.IndexOf('₽'));
+                        _opChanShowBut = _opChanNameShow.Substring(_opChanNameShow.IndexOf('₽') + 1);
+                    }
+                    opcheckshow.Dispose();
+                    opreadershow.Dispose();
+                    dbcon012.Close();
+
+                    IDbConnection dbcon06 = new SqliteConnection("Data Source=technic.db");
+                    dbcon06.Open();
+
+                    IDbCommand technicadd1 = dbcon06.CreateCommand();
+                    technicadd1.CommandText = "SELECT count(*) FROM technic WHERE ChatId='" + Convert.ToString(message.Chat.Id) + "'";
+                    int count3 = Convert.ToInt32(technicadd1.ExecuteScalar());
+                    technicadd1.Dispose();
+                    dbcon06.Close();
+
+                    if (count3 == 0)
+                    {
+                        IDbConnection dbcon013 = new SqliteConnection("Data Source=technic.db");
+                        dbcon013.Open();
+
+                        IDbCommand technicadd2 = dbcon013.CreateCommand();
+                        technicadd2.CommandText = "INSERT INTO technic (ChatId, FindingsNum, Finding, subnumberQuest1, TextQuest1, photolinkQuest1, HalfBut1TextQuest1, HalfBut2TextQuest1, HalfBut3TextQuest1, HalfBut4TextQuest1, But1TextQuest1, But2TextQuest1, But3TextQuest1, But4TextQuest1, condition, AddText1, AddText2, AddText3, AddText4, NumBut1, NumBut2, NumBut3, NumBut4, ChosedBut, PlaceChosBut) VALUES (@ChatId, @FindingsNum, @Finding, @subnumberQuest1, @TextQuest1, @photolinkQuest1, @HalfBut1TextQuest1, @HalfBut2TextQuest1, @HalfBut3TextQuest1, @HalfBut4TextQuest1, @But1TextQuest1, @But2TextQuest1, @But3TextQuest1, @But4TextQuest1, @condition, @AddText1, @AddText2, @AddText3, @AddText4, @NumBut1, @NumBut2, @NumBut3, @NumBut4, @ChosedBut, @PlaceChosBut)";
+                        technicadd2.Parameters.Add(new SqliteParameter("@ChatId", message.Chat.Id.ToString()));
+                        technicadd2.Parameters.Add(new SqliteParameter("@FindingsNum", "0"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@Finding", "nofindings"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@subnumberQuest1", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@TextQuest1", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@photolinkQuest1", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@HalfBut1TextQuest1", "0"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@HalfBut2TextQuest1", "0"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@HalfBut3TextQuest1", "0"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@HalfBut4TextQuest1", "0"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@But1TextQuest1", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@But2TextQuest1", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@But3TextQuest1", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@But4TextQuest1", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@condition", "false"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@AddText1", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@AddText2", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@AddText3", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@AddText4", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@NumBut1", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@NumBut2", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@NumBut3", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@NumBut4", "1"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@ChosedBut", "0"));
+                        technicadd2.Parameters.Add(new SqliteParameter("@PlaceChosBut", "0"));
+
+                        technicadd2.ExecuteNonQuery();
+                        technicadd2.Dispose();
+                        dbcon013.Close();
+                    }
+
+                    IDbConnection dbcon014 = new SqliteConnection("Data Source=technic.db");
+                    dbcon014.Open();
+
+                    IDbCommand technikload = dbcon014.CreateCommand();
+                    technikload.CommandText = "SELECT * FROM technic WHERE ChatId ='" + Convert.ToString(message.Chat.Id) + "' ";
+                    IDataReader reader3 = technikload.ExecuteReader();
+                    reader3.Read();
+
+                    _findingsNum = reader3.GetString(1);
+                    _finding = reader3.GetString(2);
+                    _subnumberQuest = Convert.ToInt32(reader3.GetString(3));
+                    _textQuest = reader3.GetString(4);
+                    _photolinkQuest = reader3.GetString(5);
+                    _halfBut1TextQuest = reader3.GetString(6).Trim();
+                    _halfBut2TextQuest = reader3.GetString(7).Trim();
+                    _halfBut3TextQuest = reader3.GetString(8).Trim();
+                    _halfBut4TextQuest = reader3.GetString(9).Trim();
+                    _but1TextQuest = reader3.GetString(10).Trim();
+                    _but2TextQuest = reader3.GetString(11).Trim();
+                    _but3TextQuest = reader3.GetString(12).Trim();
+                    _but4TextQuest = reader3.GetString(13).Trim();
+                    _condition = reader3.GetString(14);
+                    _addText1 = reader3.GetString(15);
+                    _addText2 = reader3.GetString(16);
+                    _addText3 = reader3.GetString(17);
+                    _addText4 = reader3.GetString(18);
+                    _numBut1 = Convert.ToInt32(reader3.GetString(19));
+                    _numBut2 = Convert.ToInt32(reader3.GetString(20));
+                    _numBut3 = Convert.ToInt32(reader3.GetString(21));
+                    _numBut4 = Convert.ToInt32(reader3.GetString(22));
+                    _chosedBut = reader3.GetString(23);
+                    _placeChosBut = reader3.GetString(24);
+
+                    technikload.Dispose();
+                    reader3.Dispose();
+                    dbcon014.Close();
+                }
             }
-
-            IDbConnection dbcon010 = new SqliteConnection("Data Source = Savings.db");
-
-            dbcon010.Open();
-            IDbCommand loading = dbcon010.CreateCommand();
-            loading.CommandText =
-                "SELECT * FROM Savings WHERE ChatId ='" + Convert.ToString(message.Chat.Id) + "' ";
-            IDataReader reader2 = loading.ExecuteReader();
-            Console.WriteLine("6");
-            reader2.Read();
-
-            _stageQuest = reader2.GetString(1);
-            _haveFire = Convert.ToBoolean(reader2.GetString(2));
-            _haveKey = Convert.ToBoolean(reader2.GetString(3));
-            _solvedQuest = Convert.ToBoolean(reader2.GetString(4));
-            _haveStick1 = Convert.ToBoolean(reader2.GetString(5));
-            _haveStick2 = Convert.ToBoolean(reader2.GetString(6));
-            _haveStick0 = Convert.ToBoolean(reader2.GetString(7));
-            _сurGame = reader2.GetString(8);
-            _invitation = reader2.GetString(9);
-            _paid = reader2.GetString(10);
-            _oskolok = Convert.ToBoolean(reader2.GetString(11));
-            _stranger = Convert.ToBoolean(reader2.GetString(12));
-            _sdelkaOtkaz = Convert.ToBoolean(reader2.GetString(13));
-            _monsterDead = Convert.ToBoolean(reader2.GetString(14));
-            _payLink = reader2.GetString(15);
-            _payday = reader2.GetString(16);
-            _url = reader2.GetString(17);
-            _haveStones = Convert.ToBoolean(reader2.GetString(18));
-            _haveShovel = Convert.ToBoolean(reader2.GetString(19));
-            _haveMeet = Convert.ToBoolean(reader2.GetString(20));
-            _fisher = Convert.ToBoolean(reader2.GetString(21));
-            _mistake = Convert.ToBoolean(reader2.GetString(22));
-            _havePlant = Convert.ToBoolean(reader2.GetString(23));
-            _ask = Convert.ToBoolean(reader2.GetString(24));
-            _findFigure = Convert.ToBoolean(reader2.GetString(25));
-            _checkTable = Convert.ToBoolean(reader2.GetString(26));
-            _checkBed = Convert.ToBoolean(reader2.GetString(27));
-            _checkKomod = Convert.ToBoolean(reader2.GetString(28));
-            _stayHome = Convert.ToBoolean(reader2.GetString(29));
-            _checkKitch = Convert.ToBoolean(reader2.GetString(30));
-            _checkAll = Convert.ToBoolean(reader2.GetString(31));
-            _energy = Convert.ToInt32(reader2.GetInt32(32));
-            _refBlockOn = Convert.ToInt32(reader2.GetInt32(33));
-            _source = reader2.GetString(34);
-            _joinDate = reader2.GetString(35);
-
-            reader2.Dispose();
-            loading.Dispose();
-            dbcon010.Close();
-
-            IDbConnection dbcon012 = new SqliteConnection("Data Source = Savings.db");
-            dbcon012.Open();
-
-            IDbCommand players = dbcon012.CreateCommand();
-            players.CommandText = "SELECT count(*) FROM Savings";
-            _playersTotal = Convert.ToInt32(players.ExecuteScalar());
-            players.Dispose();
-
-            SetupOP(dbcon012, _opChan1, _opChanName1, _opBut1, "'op1'");
-            SetupOP(dbcon012, _opChan2, _opChanName2, _opBut2, "'op2'");
-            SetupOP(dbcon012, _opChan3, _opChanName3, _opBut3, "'op3'");
-            SetupOP(dbcon012, _opChan4, _opChanName4, _opBut4, "'op4'");
-
-            IDbCommand opcheckshow = dbcon012.CreateCommand();
-            opcheckshow.CommandText = "SELECT * FROM op WHERE opnum LIKE 'opshow'";
-            IDataReader opreadershow = opcheckshow.ExecuteReader();
-            opreadershow.Read();
-            _opChanShow = opreadershow.GetString(1); ;
-            _opChanNameShow = opreadershow.GetString(2);
-            _opButShow = opreadershow.GetString(3);
-            _opChanShowUrl = "0";
-            _opChanShowBut = "0";
-
-            if (_opChanNameShow.Contains("₽"))
-            {
-                _opChanShowUrl = _opChanNameShow.Substring(0, _opChanNameShow.IndexOf('₽'));
-                _opChanShowBut = _opChanNameShow.Substring(_opChanNameShow.IndexOf('₽') + 1);
-            }
-            opcheckshow.Dispose();
-            opreadershow.Dispose();
-            dbcon012.Close();
-
-            IDbConnection dbcon06 = new SqliteConnection("Data Source=technic.db");
-            dbcon06.Open();
-
-            IDbCommand technicadd1 = dbcon06.CreateCommand();
-            technicadd1.CommandText = "SELECT count(*) FROM technic WHERE ChatId='" + Convert.ToString(message.Chat.Id) + "'";
-            int count3 = Convert.ToInt32(technicadd1.ExecuteScalar());
-            technicadd1.Dispose();
-            dbcon06.Close();
-
-            if (count3 == 0)
-            {
-                IDbConnection dbcon013 = new SqliteConnection("Data Source=technic.db");
-                dbcon013.Open();
-
-                IDbCommand technicadd2 = dbcon013.CreateCommand();
-                technicadd2.CommandText = "INSERT INTO technic (ChatId, FindingsNum, Finding, subnumberQuest1, TextQuest1, photolinkQuest1, HalfBut1TextQuest1, HalfBut2TextQuest1, HalfBut3TextQuest1, HalfBut4TextQuest1, But1TextQuest1, But2TextQuest1, But3TextQuest1, But4TextQuest1, condition, AddText1, AddText2, AddText3, AddText4, NumBut1, NumBut2, NumBut3, NumBut4, ChosedBut, PlaceChosBut) VALUES (@ChatId, @FindingsNum, @Finding, @subnumberQuest1, @TextQuest1, @photolinkQuest1, @HalfBut1TextQuest1, @HalfBut2TextQuest1, @HalfBut3TextQuest1, @HalfBut4TextQuest1, @But1TextQuest1, @But2TextQuest1, @But3TextQuest1, @But4TextQuest1, @condition, @AddText1, @AddText2, @AddText3, @AddText4, @NumBut1, @NumBut2, @NumBut3, @NumBut4, @ChosedBut, @PlaceChosBut)";
-                technicadd2.Parameters.Add(new SqliteParameter("@ChatId", message.Chat.Id.ToString()));
-                technicadd2.Parameters.Add(new SqliteParameter("@FindingsNum", "0"));
-                technicadd2.Parameters.Add(new SqliteParameter("@Finding", "nofindings"));
-                technicadd2.Parameters.Add(new SqliteParameter("@subnumberQuest1", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@TextQuest1", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@photolinkQuest1", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@HalfBut1TextQuest1", "0"));
-                technicadd2.Parameters.Add(new SqliteParameter("@HalfBut2TextQuest1", "0"));
-                technicadd2.Parameters.Add(new SqliteParameter("@HalfBut3TextQuest1", "0"));
-                technicadd2.Parameters.Add(new SqliteParameter("@HalfBut4TextQuest1", "0"));
-                technicadd2.Parameters.Add(new SqliteParameter("@But1TextQuest1", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@But2TextQuest1", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@But3TextQuest1", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@But4TextQuest1", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@condition", "false"));
-                technicadd2.Parameters.Add(new SqliteParameter("@AddText1", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@AddText2", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@AddText3", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@AddText4", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@NumBut1", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@NumBut2", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@NumBut3", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@NumBut4", "1"));
-                technicadd2.Parameters.Add(new SqliteParameter("@ChosedBut", "0"));
-                technicadd2.Parameters.Add(new SqliteParameter("@PlaceChosBut", "0"));
-
-                technicadd2.ExecuteNonQuery();
-                technicadd2.Dispose();
-                dbcon013.Close();
-            }
-
-            IDbConnection dbcon014 = new SqliteConnection("Data Source=technic.db");
-            dbcon014.Open();
-
-            IDbCommand technikload = dbcon014.CreateCommand();
-            technikload.CommandText = "SELECT * FROM technic WHERE ChatId ='" + Convert.ToString(message.Chat.Id) + "' ";
-            IDataReader reader3 = technikload.ExecuteReader();
-            reader3.Read();
-
-            _findingsNum = reader3.GetString(1);
-            _finding = reader3.GetString(2);
-            _subnumberQuest = Convert.ToInt32(reader3.GetString(3));
-            _textQuest = reader3.GetString(4);
-            _photolinkQuest = reader3.GetString(5);
-            _halfBut1TextQuest = reader3.GetString(6).Trim();
-            _halfBut2TextQuest = reader3.GetString(7).Trim();
-            _halfBut3TextQuest = reader3.GetString(8).Trim();
-            _halfBut4TextQuest = reader3.GetString(9).Trim();
-            _but1TextQuest = reader3.GetString(10).Trim();
-            _but2TextQuest = reader3.GetString(11).Trim();
-            _but3TextQuest = reader3.GetString(12).Trim();
-            _but4TextQuest = reader3.GetString(13).Trim();
-            _condition = reader3.GetString(14);
-            _addText1 = reader3.GetString(15);
-            _addText2 = reader3.GetString(16);
-            _addText3 = reader3.GetString(17);
-            _addText4 = reader3.GetString(18);
-            _numBut1 = Convert.ToInt32(reader3.GetString(19));
-            _numBut2 = Convert.ToInt32(reader3.GetString(20));
-            _numBut3 = Convert.ToInt32(reader3.GetString(21));
-            _numBut4 = Convert.ToInt32(reader3.GetString(22));
-            _chosedBut = reader3.GetString(23);
-            _placeChosBut = reader3.GetString(24);
-
-            technikload.Dispose();
-            reader3.Dispose();
-            dbcon014.Close();
         }
     }
 }

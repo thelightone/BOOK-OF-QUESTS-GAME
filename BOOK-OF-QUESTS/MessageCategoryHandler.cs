@@ -15,8 +15,10 @@ namespace app8
     {
         private static ParseMode _parseMode = new ParseMode();
         private static BaseMechanics _baseMechanic = new BaseMechanics();
+        private bool haveEnergy = true;
+        public ReplyKeyboardMarkup prevKeyboard;
 
-        async public void MessageHandler(ITelegramBotClient botClient, Message message)
+        async public void BaseMessageHandler(ITelegramBotClient botClient, Message message)
         {
             string messageText = message.Text;
 
@@ -26,7 +28,7 @@ namespace app8
                 case ("/start"):
                     _baseMechanic.SubCheck(botClient, message);
                     _baseMechanic.Сontiniue(botClient, message);
-                    if (_baseMechanic._url != "1")
+                    if (_baseMechanic.showedEnergyEnd != "1")
                         ReferalCheck(botClient, message);
                     _baseMechanic.SaveProgress(botClient, message);
                     _baseMechanic.SaveTechnic(botClient, message);
@@ -34,7 +36,7 @@ namespace app8
                 case ("🔘 Вернуться в Главное меню"):
                     _baseMechanic.SubCheck(botClient, message);
                     _baseMechanic.Сontiniue(botClient, message);
-                    if (_baseMechanic._url != "1")
+                    if (_baseMechanic.showedEnergyEnd != "1")
                         ReferalCheck(botClient, message);
                     _baseMechanic.SaveProgress(botClient, message);
                     _baseMechanic.SaveTechnic(botClient, message);
@@ -137,6 +139,8 @@ namespace app8
                         "Показов: " + _baseMechanic._opButShow + "");
                     break;
                 default:
+                    TrialEnd(botClient, message);
+                    if(haveEnergy)
                     ButtonCheck(botClient, message);
                     break;
             } 
@@ -144,10 +148,37 @@ namespace app8
 
         async public void TrialEnd(ITelegramBotClient botClient, Message message)
         {
+            string _paid = "0";
+            try
+            {
+                IDbConnection dbcon010 = new SqliteConnection("Data Source = Savings.db");
+
+                dbcon010.Open();
+                IDbCommand loading = dbcon010.CreateCommand();
+                loading.CommandText =
+                    "SELECT * FROM Savings WHERE ChatId ='" + Convert.ToString(message.Chat.Id) + "' ";
+                IDataReader reader2 = loading.ExecuteReader();
+
+                reader2.Read();
+
+                _paid = reader2.GetString(10);
+
+                reader2.Dispose();
+                loading.Dispose();
+                dbcon010.Close();
+
+            }
+            catch (Exception e)
+            {
+
+            }
+            prevKeyboard = _baseMechanic._curKeyboard;
+
+            haveEnergy = true;
             if (
-                    (_baseMechanic._paid != "1" && _baseMechanic._url == "1" && _baseMechanic._energy == 0)
-                    || (_baseMechanic._paid != "1" && _baseMechanic._url == "0"
-                    && (((Convert.ToInt16(_baseMechanic._stageQuest) > 44) && _baseMechanic._сurGame == "1" && (Convert.ToInt16(_baseMechanic._stageQuest) < 70))// Пропасть
+                    (_paid != "1" && _baseMechanic.showedEnergyEnd == "1" && _baseMechanic._energy == 0)
+                    || (_paid != "1" && _baseMechanic.showedEnergyEnd == "0"
+                    && (((Convert.ToInt16(_baseMechanic._stageQuest) > 20) && _baseMechanic._сurGame == "1" && (Convert.ToInt16(_baseMechanic._stageQuest) < 70))// Пропасть
                     || ((Convert.ToInt16(_baseMechanic._stageQuest) > 184) && _baseMechanic._сurGame == "2" && (Convert.ToInt16(_baseMechanic._stageQuest) < 700))// Легенда 1
                     || ((Convert.ToInt16(_baseMechanic._stageQuest) > 756) && _baseMechanic._сurGame == "3" && (Convert.ToInt16(_baseMechanic._stageQuest) < 810))//Шарманщик
                     || ((Convert.ToInt16(_baseMechanic._stageQuest) > 1054) && _baseMechanic._сurGame == "5" && (Convert.ToInt16(_baseMechanic._stageQuest) < 1077))// Встреча вып 1
@@ -157,9 +188,12 @@ namespace app8
             {
 
                 _baseMechanic.SubCheck(botClient, message);
-                _baseMechanic._url = "1";
+                _baseMechanic.showedEnergyEnd = "1";
 
-                ReplyKeyboardMarkup replyKeyboardMarkup = new(new[] { new KeyboardButton[] { "⚡️ x 0" }, })
+                haveEnergy = false;
+
+                ReplyKeyboardMarkup replyKeyboardMarkup = new(new[] { new KeyboardButton[] { "⚡️ x 0" },
+                                        new KeyboardButton[] { "🔘 Вернуться в Главное меню" },})
 
                 {
                     ResizeKeyboard = true
@@ -169,16 +203,14 @@ namespace app8
                       chatId: message.Chat.Id,
                       text: "У вас закончилась Энергия⚡️." + "\n" +
                       "Вы получите 10⚡️ через час.",
-                      _parseMode = ParseMode.Html,
+                      messageThreadId: message.MessageThreadId, _parseMode = ParseMode.Html,
                       replyMarkup: replyKeyboardMarkup);
 
                 InlineKeyboardMarkup inlineKeyboard = new(new[] {
-                       new[]{
-                           InlineKeyboardButton.WithCallbackData(text: "🥇 7 дней - 79₽", callbackData: "Неделя") },
+
                        new[]{
                            InlineKeyboardButton.WithCallbackData(text: "🏆 Месяц - 149₽ (-53%) ",  callbackData: "Месяц") },
-                       new[]{
-                           InlineKeyboardButton.WithCallbackData(text: "💎 Навсегда - 199₽ (-97%)",callbackData: "Безлимит") },
+
                        new[]{
                            InlineKeyboardButton.WithCallbackData( text:"Пригласить друга",  callbackData:"Пригласить") }, });
 
@@ -188,7 +220,7 @@ namespace app8
                           "Получите 30⚡️ за каждого друга." + "\n" + "\n" +
                           "⚜️ <b>Получите Премиум:</b> " + "\n" +
                           "Бесконечная Энергия⚡️ и никакой рекламы!",
-                          _parseMode = ParseMode.Html, replyMarkup: inlineKeyboard);
+                          messageThreadId: message.MessageThreadId, _parseMode = ParseMode.Html, replyMarkup: inlineKeyboard);
 
                 _baseMechanic.SaveProgress(botClient, message);
                 _baseMechanic.SaveTechnic(botClient, message);
@@ -198,31 +230,37 @@ namespace app8
 
         async private void ButtonCheck(ITelegramBotClient botClient, Message message)
         {
-            if (message.Text.Contains(_baseMechanic._but1TextQuest))
+            if (message.Text != null)
             {
-                OnButtonPress(botClient, message, "1", _baseMechanic._addText1, _baseMechanic._numBut1);
-            }
-            else if (message.Text.Contains(_baseMechanic._but2TextQuest))
-            {
-                OnButtonPress(botClient, message, "2", _baseMechanic._addText2, _baseMechanic._numBut2);
-            }
-            else if (message.Text.Contains(_baseMechanic._but3TextQuest))
-            {
-                OnButtonPress(botClient, message, "3", _baseMechanic._addText3, _baseMechanic._numBut3);
-            }
-            else if (message.Text.Contains(_baseMechanic._but4TextQuest))
-            {
-                OnButtonPress(botClient, message, "4", _baseMechanic._addText4, _baseMechanic._numBut4);
-            }
-            else
-            {
-               Message sentMessage = await botClient.SendPhotoAsync(
-                        chatId: message.Chat.Id,
-                        photo: "https://github.com/thelightone/questgame/raw/main/IMG_3030.jpg",
-                        caption: "Пожалуйста, используйте кнопки." + "\n" + "\n" +
-                        "Для переключения клавиатуры, нажмите сюда." + "\n" + "\n" +
-                        "Если не работают кнопки, нажмите 'Меню'->'Главное меню'->'Продолжить'."
-                        );
+                if (message.Text.Contains(_baseMechanic._but1TextQuest))
+                {
+                    OnButtonPress(botClient, message, "1", _baseMechanic._addText1, _baseMechanic._numBut1);
+                }
+                else if (message.Text.Contains(_baseMechanic._but2TextQuest))
+                {
+                    OnButtonPress(botClient, message, "2", _baseMechanic._addText2, _baseMechanic._numBut2);
+                }
+                else if (message.Text.Contains(_baseMechanic._but3TextQuest))
+                {
+                    OnButtonPress(botClient, message, "3", _baseMechanic._addText3, _baseMechanic._numBut3);
+                }
+                else if (message.Text.Contains(_baseMechanic._but4TextQuest))
+                {
+                    OnButtonPress(botClient, message, "4", _baseMechanic._addText4, _baseMechanic._numBut4);
+                }
+                else
+                {
+                    try
+                    {
+                        Message sentMessage = await botClient.SendPhotoAsync(
+                                 chatId: message.Chat.Id,
+                                 photo: "https://github.com/thelightone/questgame/raw/main/IMG_3030.jpg",
+                                 caption: "Пожалуйста, используйте кнопки." + "\n" + "\n" +
+                                 "Для переключения клавиатуры, нажмите сюда." + "\n" + "\n" +
+                                 "Если не работают кнопки, нажмите 'Меню'->'Главное меню'->'Продолжить'."
+                                 );
+                    } catch (Exception e) { }
+                }
             }
         }
 
@@ -242,6 +280,7 @@ namespace app8
             Message sentMessage = await botClient.SendPhotoAsync(
                     chatId: message.Chat.Id,
                     photo: "https://github.com/thelightone/questgame/raw/main/18+.jpg",
+                                                 messageThreadId: null,
                     caption: "Выберите игру:",
                     _parseMode = ParseMode.Html,
                     replyMarkup: replyKeyboardMarkup);
@@ -286,7 +325,7 @@ namespace app8
             Message sentMessage = await botClient.SendPhotoAsync(
                 chatId: message.Chat.Id,
                 photo: "https://github.com/thelightone/questgame/raw/main/horror.jpg",
-                caption: "Выберите игру:",
+                messageThreadId: null, caption: "Выберите игру:",
                 _parseMode = ParseMode.Html,
                 replyMarkup: replyKeyboardMarkup);
 
@@ -309,6 +348,7 @@ namespace app8
             Message sentMessage = await botClient.SendPhotoAsync(
                   chatId: message.Chat.Id,
                   photo: "https://github.com/thelightone/questgame/raw/main/RPG.jpg",
+                                               messageThreadId: null,
                   caption: "Выберите игру:",
                  _parseMode = ParseMode.Html, replyMarkup: replyKeyboardMarkup);
 
@@ -321,12 +361,9 @@ namespace app8
             _baseMechanic.SubCheck(botClient, message);
             InlineKeyboardMarkup inlineKeyboard = new(
                                   new[] {
-                                         new[]{
-                                            InlineKeyboardButton.WithCallbackData(text: "🥇 7 дней - 79₽", callbackData: "Неделя") },
-                                         new[]{
+                                          new[]{
                                             InlineKeyboardButton.WithCallbackData(text: "🏆 Месяц - 149₽ (-53%) ",  callbackData: "Месяц") },
-                                         new[]{
-                                            InlineKeyboardButton.WithCallbackData(text: "💎 Навсегда - 199₽ (-97%)",callbackData: "Безлимит") },
+
                                          new[]{
                                             InlineKeyboardButton.WithCallbackData( text:"Пригласить друга",  callbackData:"Пригласить") },
                                    });
@@ -339,7 +376,7 @@ namespace app8
                   "Получите 30⚡️ за каждого друга." + "\n" + "\n" +
                   "⚜️ <b>Получите Премиум:</b> " + "\n" +
                   "Бесконечная Энергия⚡️ и никакой рекламы!",
-                  _parseMode = ParseMode.Html, replyMarkup: inlineKeyboard);
+                  messageThreadId: message.MessageThreadId, _parseMode = ParseMode.Html, replyMarkup: inlineKeyboard);
         }
 
         async private void ContactUs(ITelegramBotClient botClient, Message message)
@@ -465,6 +502,7 @@ namespace app8
                 chatId: message.Chat.Id,
                 text: "❗️Не нажимайте на несколько кнопок одновременно - это может привести к поломкам." + "\n" + "\n" +
                 "Для возврата в Меню, пользуйтесь этой кнопкой:" + "\n" + "⬇️",
+                messageThreadId: message.MessageThreadId,
                 _parseMode = ParseMode.Html,
                 replyMarkup: replyKeyboardMarkup);
 
@@ -494,7 +532,8 @@ namespace app8
             Message sentMessage2 = await botClient.SendTextMessageAsync(
                       chatId: message.Chat.Id,
                       text: "⚔️ Для начала игры, поддержите нас подпиской на спонсоров. Благодаря этому, игра может работать." + "\n" + "Затем нажмите кнопку еще раз.",
-                      _parseMode = ParseMode.Html,
+                                      messageThreadId: message.MessageThreadId,
+                _parseMode = ParseMode.Html,
                       replyMarkup: inlineKeyboard);
         }
 
@@ -505,12 +544,10 @@ namespace app8
             if (_baseMechanic._paid != "1")
             {
                 InlineKeyboardMarkup inlineKeyboard = new(new[] {
-                        new[]{
-                            InlineKeyboardButton.WithCallbackData(text: "🥇 7 дней - 79₽", callbackData: "Неделя") },
+
                         new[]{
                             InlineKeyboardButton.WithCallbackData(text: "🏆 Месяц - 149₽ (-53%) ",  callbackData: "Месяц") },
-                        new[]{
-                            InlineKeyboardButton.WithCallbackData(text: "💎 Навсегда - 199₽ (-97%)",callbackData: "Безлимит") },
+
                         new[]{
                             InlineKeyboardButton.WithCallbackData( text:"Пригласить друга",  callbackData:"Пригласить") }, });
 
@@ -593,7 +630,7 @@ namespace app8
                 energyplus2.Dispose();
 
                 IDbCommand energyplus = dbcon31.CreateCommand();
-                energyplus.CommandText = "UPDATE Savings SET energy = energy+30 WHERE ChatId = " + _baseMechanic._source + "";
+                energyplus.CommandText = "UPDATE Savings SET energy = energy+30 WHERE ChatId = '" + _baseMechanic._source + "'";
                 energyplus.ExecuteNonQuery();
                 energyplus.Dispose();
 
@@ -630,7 +667,7 @@ namespace app8
 
             _baseMechanic._chosedBut = number;
             _baseMechanic.FindingCheck(botClient, message);
-
+            
             await Task.Delay(500);
             if (numBut == 7)
             {
@@ -639,10 +676,12 @@ namespace app8
 
             _baseMechanic.ComplexFindings(botClient, message);
 
-            await Task.Delay(1500);
+            await Task.Delay(1000);
 
             _baseMechanic._stageQuest = Convert.ToString(numBut);
             _baseMechanic.Quest1(botClient, message);
+
+
 
             if (_baseMechanic._energy > 0) _baseMechanic._energy = _baseMechanic._energy - 1;
 

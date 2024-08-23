@@ -43,93 +43,103 @@ namespace app8
 
         async public void SubscrCheck(ITelegramBotClient botClient, Message message)
         {
-            if (message.Text.Contains("opchan"))
+            if (message.Text != null)
             {
-                string msg = message.Text.Substring(0, message.Text.IndexOf(' '));
-
-                switch (msg)
+                if (message.Text.Contains("opchan"))
                 {
-                    case "opchan1":
+                    string msg = "";
+                    try
+                    {
+                        msg = message.Text.Substring(0, message.Text.IndexOf(' '));
+                    }
+                    catch
+                    {
 
-                        SetOP(botClient, message, _opChan1, _opBut1, _opChanName1, 1);
-                        break;
+                    }
+                    switch (msg)
+                    {
+                        case "opchan1":
 
-                    case "opchanname1":
+                            SetOP(botClient, message, _opChan1, _opBut1, _opChanName1, 1);
+                            break;
 
-                        SetOPName(botClient, message, _opChanName1);
-                        break;
+                        case "opchanname1":
 
-                    case "opchan2":
+                            SetOPName(botClient, message, _opChanName1);
+                            break;
 
-                        SetOP(botClient, message, _opChan2, _opBut2, _opChanName2, 2);
-                        break;
+                        case "opchan2":
 
-                    case "opchanname2":
+                            SetOP(botClient, message, _opChan2, _opBut2, _opChanName2, 2);
+                            break;
 
-                        SetOPName(botClient, message, _opChanName2);
-                        break;
+                        case "opchanname2":
 
-                    case "opchan3":
+                            SetOPName(botClient, message, _opChanName2);
+                            break;
 
-                        SetOP(botClient, message, _opChan3, _opBut3, _opChanName3, 3);
-                        break;
+                        case "opchan3":
 
-                    case "opchanname3":
+                            SetOP(botClient, message, _opChan3, _opBut3, _opChanName3, 3);
+                            break;
 
-                        SetOPName(botClient, message, _opChanName3);
-                        break;
+                        case "opchanname3":
 
-                    case "opchan4":
+                            SetOPName(botClient, message, _opChanName3);
+                            break;
 
-                        SetOP(botClient, message, _opChan4, _opBut4, _opChanName4, 4);
-                        break;
+                        case "opchan4":
 
-                    case "opchanname4":
+                            SetOP(botClient, message, _opChan4, _opBut4, _opChanName4, 4);
+                            break;
 
-                        SetOPName(botClient, message, _opChanName4);
-                        break;
+                        case "opchanname4":
 
-                    case "opchanshow":
+                            SetOPName(botClient, message, _opChanName4);
+                            break;
 
-                        _opChanShow = message.Text.Substring(11);
-                        if (_opChanShow == "0")
-                        {
-                            _opChanShow = "0";
-                            _opChanNameShow = "0";
-                            _opChanShowBut = "0";
-                            Message sendMessage = await botClient.SendTextMessageAsync(
-                                         chatId: message.Chat.Id,
-                                         "Ссылка для показов сброшена"
-                            );
-                        }
-                        else
-                        {
-                            Message sendMessage = await botClient.SendTextMessageAsync(
-                                    chatId: message.Chat.Id,
-                                    "" + _opChanShow + "", _parseMode = ParseMode.Html
-                                    );
-                        }
-                        break;
+                        case "opchanshow":
 
-                    case "opchannameshow":
+                            _opChanShow = message.Text.Substring(11);
+                            if (_opChanShow == "0")
+                            {
+                                _opChanShow = "0";
+                                _opChanNameShow = "0";
+                                _opChanShowBut = "0";
+                                Message sendMessage = await botClient.SendTextMessageAsync(
+                                             chatId: message.Chat.Id,
+                                             "Ссылка для показов сброшена"
+                                );
+                            }
+                            else
+                            {
+                                Message sendMessage = await botClient.SendTextMessageAsync(
+                                        chatId: message.Chat.Id,
+                                        "" + _opChanShow + "", (int?)(_parseMode = ParseMode.Html)
+                                        );
+                            }
+                            break;
 
-                        _opChanNameShow = message.Text.Substring(15);
-                        _opChanShowUrl = _opChanNameShow.Substring(0, _opChanNameShow.IndexOf('₽'));
-                        _opChanShowBut = _opChanNameShow.Substring(_opChanNameShow.IndexOf('₽') + 1);
+                        case "opchannameshow":
 
-                        InlineKeyboardMarkup inlineKeyboard = new(new[]
-                                                            { new[]{ InlineKeyboardButton.WithUrl(text:_opChanShowBut,url:_opChanShowUrl) }
+                            _opChanNameShow = message.Text.Substring(15);
+                            _opChanShowUrl = _opChanNameShow.Substring(0, _opChanNameShow.IndexOf('₽'));
+                            _opChanShowBut = _opChanNameShow.Substring(_opChanNameShow.IndexOf('₽') + 1);
+
+                            InlineKeyboardMarkup inlineKeyboard = new(new[]
+                                                                { new[]{ InlineKeyboardButton.WithUrl(text:_opChanShowBut,url:_opChanShowUrl) }
                                                             });
 
-                        Message sentMessage = await botClient.SendTextMessageAsync(
-                                    chatId: message.Chat.Id,
-                                    "" + _opChanShow + "",
-                                    replyMarkup: inlineKeyboard
-                                    );
-                        break;
-                }
+                            Message sentMessage = await botClient.SendTextMessageAsync(
+                                        chatId: message.Chat.Id,
+                                        "" + _opChanShow + "",
+                                        replyMarkup: inlineKeyboard
+                                        );
+                            break;
+                    }
 
-                SaveOP();
+                    SaveOP();
+                }
             }
 
             if (_opChan1 != 0)

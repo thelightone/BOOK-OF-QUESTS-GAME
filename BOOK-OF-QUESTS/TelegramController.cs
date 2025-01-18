@@ -5,6 +5,10 @@ using System.Threading.Tasks;
 using System.Threading;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Google.Apis.Auth.OAuth2;
+//using Google.Apis.Services;
+using Google.Apis.Sheets.v4;
+using Google.Apis.Sheets.v4.Data;
 
 namespace app8
 {
@@ -18,7 +22,7 @@ namespace app8
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-            botClient = new TelegramBotClient("5469591033:AAFNTWouLXFX4Ywd72k2YNatwCEJVmnCvDo");
+            botClient = new TelegramBotClient("8079472939:AAGzAemLe43ie2Uy12pBxG2lHxMyaXTNjg4");
             botClient.StartReceiving(Update, Error);
             Console.ReadLine();
 

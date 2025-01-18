@@ -6,12 +6,10 @@ using Telegram.Bot.Types;
 using Microsoft.Data.Sqlite;
 using System.Data;
 using Telegram.Bot.Types.Enums;
-using Qiwi.BillPayments.Client;
-using Qiwi.BillPayments.Model.In;
-using Qiwi.BillPayments.Model;
-using Qiwi.BillPayments.Model.Out;
 using System.Collections.Generic;
 using Telegram.Bot.Types.Payments;
+using System.Runtime.CompilerServices;
+using System.ComponentModel.Design;
 
 
 namespace app8
@@ -22,20 +20,9 @@ namespace app8
 
         // ОПЛАТА ПО КИВИ АПИ
         private static string _secretKey = "XXXX";
-        private BillPaymentsClient _client = BillPaymentsClientFactory.Create(_secretKey);
 
-        private string _linkWeek = "https://t.me/book_of_quests_paymentsbot";
-        private string _linkMonth = "https://t.me/book_of_quests_paymentsbot";
-        private string _linkYear = "https://t.me/book_of_quests_paymentsbot";
-        private string _billIDWeek = null;
-        private string _billIDUnl = null;
-        private string _billIDMonth = null;
         private string _paid = "false";
         private string _payday = "0";
-
-        private BillResponse _responseWeek;
-        private BillResponse _responseUnl;
-        private BillResponse _responseMonth;
 
         private CallbackQuery _callbackQuery;
 
@@ -49,15 +36,17 @@ namespace app8
 
                     await botClient.SendTextMessageAsync(
                     chatId: _callbackQuery.Message.Chat.Id,
-                    text: "Ваша персональная ссылка для приглашения, перешлите ее друзьям: " + "\n" + "t.me/book_of_quests_bot?start=" + _callbackQuery.Message.Chat.Id + "");
+                    text: "Твоя персональная ссылка для приглашения, перешлите ее друзьям: " + "\n"
+                    + "t.me/top_gamez_bot?start=" + _callbackQuery.Message.Chat.Id + "");
                     break;
 
                 case "Месяц":
 
                     //HandlerPattern(botClient, _linkMonth, _responseMonth, _callbackQuery.Data, _billIDWeek, 30);
-                    await botClient.SendInvoiceAsync(_callbackQuery.Message.Chat,
-                                               "Получить премиум-подписку", "Дает безлимитный доступ ко всем квестам на месяц.", "unlock_X", "",
-                                               "XTR", new List<LabeledPrice>() { new LabeledPrice("Price", 1) }, photoUrl: "https://cdn-icons-png.flaticon.com/512/891/891386.png");
+                    await botClient.SendInvoiceAsync(chatId: _callbackQuery.Message.Chat.Id,
+                                               "Отключить рекламу", "Поддержите проект и наслаждайтесь игрой без рекламы!", "unlock_X", "",
+                                               "XTR", new List<LabeledPrice>() { new LabeledPrice("Price", 1) },
+                                               photoUrl: "https://as2.ftcdn.net/v2/jpg/05/01/47/61/1000_F_501476117_i0AkipqtbO0vq6YGfECQVDhsvyJeUDDl.jpg");
                     break;
 
             }
@@ -66,155 +55,105 @@ namespace app8
 
         public void SuccesfulBuy()
         {
-            _paid = "1";
-            _payday = DateTime.Today.AddDays(30).ToString();
-
             IDbConnection dbcon17 = new SqliteConnection("Data Source=Savings.db");
             dbcon17.Open();
             IDbCommand savetechnic1 = dbcon17.CreateCommand();
-            savetechnic1.CommandText = "UPDATE Savings SET paid = '" + _paid + "', payday = '" + _payday + "' WHERE  ChatId='" + _callbackQuery.Message.Chat.Id.ToString() + "'";
+            savetechnic1.CommandText = "UPDATE Savings SET Paid = 1 WHERE  ChatId='" + _callbackQuery.Message.Chat.Id.ToString() + "'";
             savetechnic1.ExecuteNonQuery();
             savetechnic1.Dispose();
             dbcon17.Close();
         }
 
-        //private void QiwiPay()
-        //{
-        //    string billid = Guid.NewGuid().ToString();
+        async public void Statictic(ITelegramBotClient botClient, Message message)
+        {
+            var utmnum = message.Text.Substring(4);
 
-        //    var paymentCreateWeek = _client.CreateBill(
-        //        info: new CreateBillInfo
-        //        {
-        //            BillId = Guid.NewGuid().ToString(),
-        //            Amount = new MoneyAmount
-        //            {
-        //                ValueDecimal = 79.0m,
-        //                CurrencyEnum = CurrencyEnum.Rub
-        //            },
-        //            Comment = "BOOK OF QUESTS",
-        //            ExpirationDateTime = DateTime.Now.AddMinutes(10),
-        //            Customer = new Customer
-        //            {
-        //                Email = "example@mail.org",
-        //                Account = Guid.NewGuid().ToString(),
-        //                Phone = "79123456789"
-        //            },
-        //            SuccessUrl = new Uri("https://t.me/book_of_quests"),
+            IDbConnection statsutm = new SqliteConnection("Data Source=Savings.db");
+            statsutm.Open();
 
-        //        });
+            IDbCommand statsutm2 = statsutm.CreateCommand();
+            statsutm2.CommandText = "SELECT count(*) FROM Savings WHERE source ='" + utmnum + "' AND joindate = '" + DateTime.Today + "' ";
+            int countutmtoday = Convert.ToInt32(statsutm2.ExecuteScalar());
+            statsutm2.Dispose();
 
-        //    var paymentCreateMonth = _client.CreateBill(
-        //          info: new CreateBillInfo
-        //          {
-        //              BillId = Guid.NewGuid().ToString(),
-        //              Amount = new MoneyAmount
-        //              {
-        //                  ValueDecimal = 149.0m,
-        //                  CurrencyEnum = CurrencyEnum.Rub
-        //              },
-        //              Comment = "BOOK OF QUESTS",
-        //              ExpirationDateTime = DateTime.Now.AddMinutes(10),
-        //              Customer = new Customer
-        //              {
-        //                  Email = "example@mail.org",
-        //                  Account = Guid.NewGuid().ToString(),
-        //                  Phone = "79123456789"
-        //              },
-        //              SuccessUrl = new Uri("https://t.me/book_of_quests"),
+            IDbCommand statsutm3 = statsutm.CreateCommand();
+            statsutm3.CommandText = "SELECT count(*) FROM Savings WHERE source ='" + utmnum + "' AND joindate = '" + DateTime.Today.AddDays(-1) + "' ";
+            int countutmyest = Convert.ToInt32(statsutm3.ExecuteScalar());
+            statsutm3.Dispose();
 
-        //          });
+            IDbCommand statsutm4 = statsutm.CreateCommand();
+            statsutm4.CommandText = "SELECT count(*) FROM Savings WHERE source ='" + utmnum + "' ";
+            int countutmall = Convert.ToInt32(statsutm4.ExecuteScalar());
+            statsutm4.Dispose();
+            statsutm.Close();
 
-        //    var paymentCreateUnl = _client.CreateBill(
-        //           info: new CreateBillInfo
-        //           {
-        //               BillId = Guid.NewGuid().ToString(),
-        //               Amount = new MoneyAmount
-        //               {
-        //                   ValueDecimal = 199.0m,
-        //                   CurrencyEnum = CurrencyEnum.Rub
-        //               },
-        //               Comment = "BOOK OF QUESTS",
-        //               ExpirationDateTime = DateTime.Now.AddMinutes(10),
-        //               Customer = new Customer
-        //               {
-        //                   Email = "example@mail.org",
-        //                   Account = Guid.NewGuid().ToString(),
-        //                   Phone = "79123456789"
-        //               },
-        //               SuccessUrl = new Uri("https://t.me/book_of_quests"),
+            Message sentMessage = await botClient.SendTextMessageAsync(
+                    chatId: message.Chat.Id,
+                    "Всего пользователей пришло:'" + countutmall + "'" + "\n" +
+                    "Вчера:'" + countutmyest + "'" + "\n" +
+                    "Сегодня:'" + countutmtoday + "'");
+        }
 
-        //           });
+         public void ReferalCheck(ITelegramBotClient botClient, Message message)
+        {
+            Console.WriteLine("CheckReferal");
+            IDbConnection dbcon31 = new SqliteConnection("Data Source=Savings.db");
 
-        //    _linkWeek = paymentCreateWeek.PayUrl.ToString();
-        //    _linkYear = paymentCreateUnl.PayUrl.ToString();
-        //    _linkMonth = paymentCreateMonth.PayUrl.ToString();
+            dbcon31.Open();
+            IDbCommand firstsave = dbcon31.CreateCommand();
+            firstsave.CommandText = "SELECT * FROM Savings WHERE ChatId='" + Convert.ToString(message.Chat.Id) + "'";
+            IDataReader reader2 = firstsave.ExecuteReader();
 
-        //    _billIDWeek = paymentCreateWeek.BillId.ToString();
-        //    _billIDMonth = paymentCreateMonth.BillId.ToString();
-        //    _billIDUnl = paymentCreateUnl.BillId.ToString();
+            reader2.Read();
 
-        //    _responseWeek = _client.GetBillInfo(_billIDWeek);
-        //    _responseMonth = _client.GetBillInfo(_billIDMonth);
-        //    _responseUnl = _client.GetBillInfo(_billIDUnl);
-        //}
+            var _refBlockOn = Convert.ToInt32(reader2.GetInt32(6));
+            reader2.Dispose();
+            firstsave.Dispose();
+            dbcon31.Close();
 
-        //async private void HandlerPattern(ITelegramBotClient botClient, string urlLink, BillResponse response, string infoText, string billID, int duration)
-        //{
-        //    QiwiPay();
+            if (_refBlockOn != 1)
+            {
+                dbcon31.Open();
 
-        //    InlineKeyboardMarkup inlineKeyboard = new(new[] {
-        //        new[]{ InlineKeyboardButton.WithUrl(text: "💳 Банковской картой", url: urlLink) },
-        //        new[]{ InlineKeyboardButton.WithUrl(text: "🥝 QIWI",  url:  urlLink) },
-        //                                                    });
+                var _joinDate = DateTime.Today.ToString();
+                string _source = "0";
+                if (message.Text.Length > 6)
+                {
+                    _source = message.Text.Substring(7);
+                }
+                IDbCommand energyplus2 = dbcon31.CreateCommand();
+                energyplus2.CommandText = "UPDATE Savings SET joindate = '" + _joinDate + "', source = '" + _source + "', source2 = 0,  source3 = 0,refblockon = 1 WHERE ChatId = " + message.Chat.Id.ToString() + "";
+                energyplus2.ExecuteNonQuery();
+                energyplus2.Dispose();
 
-        //    Message sentMessage = await botClient.SendTextMessageAsync(
-        //         chatId: _callbackQuery.Message.Chat.Id,
-        //         text:"⚜️ Выберите способ оплаты:",
-        //         (int?)(_parseMode = ParseMode.Html), replyMarkup: inlineKeyboard);
+                if (_source != null)
+                {
+                    IDbCommand addSource2 = dbcon31.CreateCommand();
+                    addSource2.CommandText = "SELECT * FROM Savings WHERE ChatId='" + _source + "'";
+                    IDataReader reader3 = addSource2.ExecuteReader();
 
-        //    string status = "0";
+                    reader3.Read();
 
-        //    do
-        //    {
-        //        await Task.Delay(60000);
-        //        response = _client.GetBillInfo(billID);
-        //        status = response.Status.ValueString;
+                    var source2 = Convert.ToInt32(reader3.GetInt32(2));
+                    var source3 = Convert.ToInt32(reader3.GetInt32(3));
+                    Console.WriteLine(source2);
+                    Console.WriteLine(source3);
+                    reader3.Dispose();
+                    addSource2.Dispose();
 
-        //        if (status == "PAID")
-        //        {
-        //            _paid = "1";
-        //            string info = "0";
-        //            _payday = DateTime.Today.AddDays(duration).ToString();
-        //            info = infoText;
+                    IDbCommand addSources = dbcon31.CreateCommand();
+                    addSources.CommandText = "UPDATE Savings SET source2 = '" + source2 + "', source3 = '" + source3 + "' WHERE ChatId = " + message.Chat.Id.ToString() + "";
+                    addSources.ExecuteNonQuery();
+                    addSources.Dispose();
+                }
 
-        //            IDbConnection dbcon17 = new SqliteConnection("Data Source=Savings.db");
-        //            dbcon17.Open();
-        //            IDbCommand savetechnic1 = dbcon17.CreateCommand();
-        //            savetechnic1.CommandText = "UPDATE Savings SET paid = '" + _paid + "', payday = '" + _payday + "' WHERE  ChatId='" + _callbackQuery.Message.Chat.Id.ToString() + "'";
-        //            savetechnic1.ExecuteNonQuery();
-        //            savetechnic1.Dispose();
-        //            dbcon17.Close();
+                dbcon31.Close();
 
-        //            ReplyKeyboardMarkup replyKeyboardMarkup = new(new[] { new KeyboardButton[] { "🔘 Продолжить игру" }, })
-        //            {
-        //                ResizeKeyboard = true
-        //            };
+            }
+        }
+}
 
-        //            sentMessage = await botClient.SendTextMessageAsync(
-        //                 chatId: _callbackQuery.Message.Chat.Id,
-        //                 text: "Оплата успешно прошла!",
-        //                 (int?)(_parseMode = ParseMode.Html), replyMarkup: replyKeyboardMarkup);
 
-        //            sentMessage = await botClient.SendTextMessageAsync(
-        //                chatId: 374579614,
-        //                text: "Куплено: " + info,
-        //                (int?)(_parseMode = ParseMode.Html));
 
-        //            break;
-        //        }
-        //    }
-        //    while (status != "EXPIRED" && status != "PAID");
-        //}
-    }
 }
 

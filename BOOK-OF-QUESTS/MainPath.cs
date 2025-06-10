@@ -10,6 +10,7 @@ using Telegram.Bot.Types.Payments;
 using Telegram.Bot.Types.ReplyMarkups;
 using Microsoft.Data.Sqlite;
 using System.Data;
+using System.Collections;
 
 
 namespace app8
@@ -28,7 +29,7 @@ namespace app8
             switch (update)
             {
                 case { PreCheckoutQuery: { } preCheckoutQuery }:
-                    if (preCheckoutQuery is { InvoicePayload: "unlock_X", Currency: "XTR", TotalAmount: 1 })
+                    if (preCheckoutQuery is { InvoicePayload: "unlock_X", Currency: "XTR", TotalAmount: 99 })
                         await bot.AnswerPreCheckoutQueryAsync(preCheckoutQuery.Id);
                     else
                         await bot.AnswerPreCheckoutQueryAsync(preCheckoutQuery.Id, "Ошибка оплаты, попробуйте еще раз.");
@@ -60,9 +61,9 @@ namespace app8
                                 {
                                     SavePlayer(bot, message);
                                 }
-                                else if(messageText.Contains("utm"))
+                                else if (messageText.Contains("utm"))
                                 {
-                                    _inlineHandler.Statictic(botClient,message);    
+                                    _inlineHandler.Statictic(botClient, message);
                                 }
                                 else if (messageText.Contains("users"))
                                 {
@@ -117,6 +118,30 @@ namespace app8
 
         }
 
+        private static List<long> PlayersIds()
+        {
+            List<long> userIds = new List<long>();
+
+            using (IDbConnection getIds = new SqliteConnection("Data Source = Savings.db"))
+            {
+                getIds.Open();
+                string query = "SELECT ChatId FROM Savings"; 
+                IDbCommand command = getIds.CreateCommand();
+
+                command.CommandText = query;
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        userIds.Add(reader.GetInt64(0)); 
+                    }
+                }
+            }
+
+            return userIds;
+        }
+
         private static async Task SendInitialMessage(TelegramBotClient botClient, Message message)
         {
             // Создание клавиатуры с кнопками
@@ -124,7 +149,7 @@ namespace app8
             {
         new InlineKeyboardButton[]
         {
-            InlineKeyboardButton.WithWebApp("🚀 Начать игру", new WebAppInfo { Url = "https://thelightone.github.io/GameBundle4/" })
+            InlineKeyboardButton.WithCallbackData("🚀 Начать игру", "Игры" )
         },
         new InlineKeyboardButton[]
         {
@@ -132,7 +157,7 @@ namespace app8
         },
         new InlineKeyboardButton[]
         {
-            InlineKeyboardButton.WithCallbackData("👬 Пригласить друга", "Пригласить")
+            InlineKeyboardButton.WithUrl("👬 Наш канал", "t.me/book_of_quests" )
         }
     });
 
@@ -148,48 +173,6 @@ namespace app8
     }
 }
 
-//// Путь к файлу базы данных SQLite
-//string sqliteDbPath = "path_to_your_database.db";
 
-//// Запрос для извлечения данных из базы данных SQLite
-//string query = "SELECT * FROM your_table";
 
-//// Получаем данные из SQLite
-//SQLiteHelper sqliteHelper = new SQLiteHelper(sqliteDbPath);
-//List<Dictionary<string, object>> sqliteData = sqliteHelper.GetData(query);
-
-//// Преобразуем данные в формат, подходящий для Google Sheets
-//List<IList<object>> sheetData = new List<IList<object>>();
-
-//// Заголовки (если нужно, можно добавить заголовки из словаря)
-//List<object> header = new List<object>();
-//foreach (var column in sqliteData[0].Keys)
-//{
-//    header.Add(column);
-//}
-//sheetData.Add(header);
-
-//// Данные
-//foreach (var row in sqliteData)
-//{
-//    List<object> rowData = new List<object>();
-//    foreach (var column in row.Values)
-//    {
-//        rowData.Add(column);
-//    }
-//    sheetData.Add(rowData);
-//}
-
-//// ID вашей таблицы Google Sheets
-//string spreadsheetId = "your_spreadsheet_id";
-
-//// Диапазон (например, "Sheet1!A1" - начать с ячейки A1)
-//string range = "Sheet1!A1";
-
-//// Обновляем Google Sheets
-//GoogleSheetsHelper googleSheetsHelper = new GoogleSheetsHelper("path_to_your_credentials.json");
-//googleSheetsHelper.UpdateSheet(spreadsheetId, range, sheetData);
-
-//Console.WriteLine("Данные успешно скопированы в Google Sheets.");
-//    }
 

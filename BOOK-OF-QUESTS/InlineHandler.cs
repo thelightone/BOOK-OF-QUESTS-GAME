@@ -17,13 +17,6 @@ namespace app8
     internal class InlineHandler
     {
         private static ParseMode _parseMode = new ParseMode();
-
-        // ОПЛАТА ПО КИВИ АПИ
-        private static string _secretKey = "XXXX";
-
-        private string _paid = "false";
-        private string _payday = "0";
-
         private CallbackQuery _callbackQuery;
 
         async public void MessageHandler(ITelegramBotClient botClient, Update update)
@@ -42,7 +35,6 @@ namespace app8
 
                 case "Месяц":
 
-                    //HandlerPattern(botClient, _linkMonth, _responseMonth, _callbackQuery.Data, _billIDWeek, 30);
                     await botClient.SendInvoiceAsync(chatId: _callbackQuery.Message.Chat.Id,
                                                "Отключить рекламу", "Поддержите проект и наслаждайтесь игрой без рекламы!", "unlock_X", "",
                                                "XTR", new List<LabeledPrice>() { new LabeledPrice("Price", 1) },

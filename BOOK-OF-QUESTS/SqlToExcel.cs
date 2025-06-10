@@ -62,12 +62,17 @@ class SqlToExcel
                         firstsave.CommandText = "SELECT count(*) FROM Savings WHERE paid = 1";
                         int count = Convert.ToInt32(firstsave.ExecuteScalar());
                         firstsave.Dispose();
+                        IDbCommand firstsave2 = connection.CreateCommand();
+                        firstsave2.CommandText = "SELECT count(*) FROM Savings";
+                        int count2 = Convert.ToInt32(firstsave2.ExecuteScalar());
+                        firstsave2.Dispose();
                         connection.Close();
 
                         using (var stream = new FileStream(@"output.xlsx", FileMode.Open))
                         {
                             await bot.SendDocumentAsync(update.Message.Chat, new InputOnlineFile(stream, "output.xlsx"));
                             await bot.SendTextMessageAsync(update.Message.Chat, "Подписок куплено: " + count.ToString());
+                            await bot.SendTextMessageAsync(update.Message.Chat, "Всего: " + count2.ToString());
                         }
 
                         Console.WriteLine("Данные успешно записаны в Excel!");

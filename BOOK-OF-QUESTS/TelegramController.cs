@@ -24,6 +24,7 @@ namespace app8
 
             botClient = new TelegramBotClient("8079472939:AAGzAemLe43ie2Uy12pBxG2lHxMyaXTNjg4");
             botClient.StartReceiving(Update, Error);
+            
             Console.ReadLine();
 
             async static Task Update(ITelegramBotClient botClient, Update update, CancellationToken token)

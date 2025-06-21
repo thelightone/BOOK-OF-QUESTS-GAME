@@ -9,6 +9,7 @@ using Google.Apis.Auth.OAuth2;
 //using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
+using SQLitePCL;
 
 namespace app8
 {
@@ -18,6 +19,9 @@ namespace app8
         public static TelegramBotClient botClient;
         static void Main(string[] args)
         {
+            // Инициализация SQLite
+            SQLitePCL.raw.SetProvider(new SQLitePCL.SQLite3Provider_e_sqlite3());
+            
             Directory.SetCurrentDirectory(AppContext.BaseDirectory);
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;

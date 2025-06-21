@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Telegram.Bot.Types.Payments;
 using System.Runtime.CompilerServices;
 using System.ComponentModel.Design;
+using static System.Net.WebRequestMethods;
 
 
 namespace app8
@@ -21,28 +22,135 @@ namespace app8
 
         async public void MessageHandler(ITelegramBotClient botClient, Update update)
         {
-            _callbackQuery = update.CallbackQuery;
-
-            switch (_callbackQuery.Data)
+            try
             {
-                case "Пригласить":
+                _callbackQuery = update.CallbackQuery;
+                if (_callbackQuery == null)
+                {
+                    Console.WriteLine("CallbackQuery is null");
+                    return;
+                }
 
-                    await botClient.SendTextMessageAsync(
-                    chatId: _callbackQuery.Message.Chat.Id,
-                    text: "Твоя персональная ссылка для приглашения, перешлите ее друзьям: " + "\n"
-                    + "t.me/top_gamez_bot?start=" + _callbackQuery.Message.Chat.Id + "");
-                    break;
+                Console.WriteLine($"Received callback: {_callbackQuery.Data}");
 
-                case "Месяц":
+                switch (_callbackQuery.Data)
+                {
+                    case "Генерировать":
+                        var chatMember = await botClient.GetChatMemberAsync(
+                            chatId: -1001531639213,
+                            userId: _callbackQuery.From.Id
+                        );
 
-                    await botClient.SendInvoiceAsync(chatId: _callbackQuery.Message.Chat.Id,
-                                               "Отключить рекламу", "Поддержите проект и наслаждайтесь игрой без рекламы!", "unlock_X", "",
-                                               "XTR", new List<LabeledPrice>() { new LabeledPrice("Price", 1) },
-                                               photoUrl: "https://as2.ftcdn.net/v2/jpg/05/01/47/61/1000_F_501476117_i0AkipqtbO0vq6YGfECQVDhsvyJeUDDl.jpg");
-                    break;
+                        if (chatMember.Status == ChatMemberStatus.Left || chatMember.Status == ChatMemberStatus.Kicked)
+                        {
+                            await botClient.SendTextMessageAsync(
+                                chatId: _callbackQuery.Message.Chat.Id,
+                                text: "❤️ Для генерации изображения, пожалуйста, подпишитесь на наш канал.",
+                                replyMarkup: new InlineKeyboardMarkup(new[]
+                                {
+                                    new InlineKeyboardButton[]
+                                    {
+                                        InlineKeyboardButton.WithUrl("📢 Подписаться", "https://t.me/book_of_quests"),
+                                        InlineKeyboardButton.WithCallbackData("✅ Я подписался", "Генерировать")
+                                    }
+                                })
+                            );
+                        }
+                        else
+                        {
+                            // Устанавливаем состояние ожидания промпта
+                            if (!MainPath._waitingForPrompt.ContainsKey(_callbackQuery.From.Id))
+                            {
+                                MainPath._waitingForPrompt.Add(_callbackQuery.From.Id, true);
+                            }
+                            else
+                            {
+                                MainPath._waitingForPrompt[_callbackQuery.From.Id] = true;
+                            }
 
+                            await botClient.SendTextMessageAsync(
+                                chatId: _callbackQuery.Message.Chat.Id,
+                                text: "Введите описание изображения. Рекомендуется описывать изображение как можно подробнее:",
+                                replyMarkup: new InlineKeyboardMarkup(new[]
+                                {
+                                    new InlineKeyboardButton[]
+                                    {
+                                        InlineKeyboardButton.WithCallbackData("Назад", "Главное меню")
+                                    }
+                                })
+                            );
+                        }
+                        break;
+
+                    case "Пригласить":
+                        await botClient.SendTextMessageAsync(
+                            chatId: _callbackQuery.Message.Chat.Id,
+                            text: "Твоя персональная ссылка для приглашения, перешлите ее друзьям: " + "\n"
+                            + "t.me/top_gamez_bot?start=" + _callbackQuery.Message.Chat.Id + "");
+                        break;
+
+                    case "Месяц":
+                        await botClient.SendInvoiceAsync(
+                            chatId: _callbackQuery.Message.Chat.Id,
+                            title: "Получить премиум",
+                            description: "Поддержите проект и получите безлимитные генерации и отсутствие рекламы на месяц!",
+                            payload: "unlock_X",
+                            providerToken: "",
+                            currency: "XTR",
+                            prices: new List<LabeledPrice>() { new LabeledPrice("Price", 99) },
+                            photoUrl: "https://github.com/thelightone/BOOK-OF-QUESTS-GAME/blob/main/photo_2025-06-18_18-39-15.jpg?raw=true"
+                        );
+                        break;
+                    case "Главное меню":
+                        InlineKeyboardMarkup mainMenuKeyboard = new InlineKeyboardMarkup(new[]
+                        {
+                            new InlineKeyboardButton[]
+                            {
+                                InlineKeyboardButton.WithCallbackData("🖼 Генерировать изображение", "Генерировать")
+                            },
+                            new InlineKeyboardButton[]
+                            {
+                                InlineKeyboardButton.WithCallbackData("👑 Подписка", "Месяц")
+                            }
+                        });
+
+                        await botClient.SendPhotoAsync(
+                            chatId: _callbackQuery.Message.Chat.Id,
+                            photo: "https://github.com/thelightone/BOOK-OF-QUESTS-GAME/blob/main/photo_2025-06-18_18-45-17.jpg?raw=true",
+                            caption: "👨‍🎨 <b>MidJoBot</b> - самый быстрый бот для генерации изображений." + "\n" +
+                                "Генерируйте изображения за секунды!" + "\n" + "\n" +
+                                "Используемая сеть - <b>Stable Diffusion.</b>",
+                            parseMode: ParseMode.Html,
+                            replyMarkup: mainMenuKeyboard
+                        );
+                        break;
+
+                    default:
+                        await botClient.AnswerCallbackQueryAsync(
+                            callbackQueryId: _callbackQuery.Id,
+                            text: "Неизвестная команда"
+                        );
+                        break;
+                }
+
+                // Отвечаем на callback query, чтобы убрать часики
+                await botClient.AnswerCallbackQueryAsync(_callbackQuery.Id);
             }
-
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in MessageHandler: {ex}");
+                if (_callbackQuery != null)
+                {
+                    try
+                    {
+                        await botClient.AnswerCallbackQueryAsync(
+                            callbackQueryId: _callbackQuery.Id,
+                            text: "Произошла ошибка при обработке запроса"
+                        );
+                    }
+                    catch { }
+                }
+            }
         }
 
         public void SuccesfulBuy()
@@ -50,7 +158,7 @@ namespace app8
             IDbConnection dbcon17 = new SqliteConnection("Data Source=Savings.db");
             dbcon17.Open();
             IDbCommand savetechnic1 = dbcon17.CreateCommand();
-            savetechnic1.CommandText = "UPDATE Savings SET Paid = 1 WHERE  ChatId='" + _callbackQuery.Message.Chat.Id.ToString() + "'";
+            savetechnic1.CommandText = "UPDATE Savings SET Paid = 1, payDate = datetime('now') WHERE ChatId = '" + _callbackQuery.Message.Chat.Id.ToString() + "'";
             savetechnic1.ExecuteNonQuery();
             savetechnic1.Dispose();
             dbcon17.Close();
@@ -86,7 +194,7 @@ namespace app8
                     "Сегодня:'" + countutmtoday + "'");
         }
 
-         public void ReferalCheck(ITelegramBotClient botClient, Message message)
+        public void ReferalCheck(ITelegramBotClient botClient, Message message)
         {
             Console.WriteLine("CheckReferal");
             IDbConnection dbcon31 = new SqliteConnection("Data Source=Savings.db");
@@ -124,10 +232,15 @@ namespace app8
                     addSource2.CommandText = "SELECT * FROM Savings WHERE ChatId='" + _source + "'";
                     IDataReader reader3 = addSource2.ExecuteReader();
 
+                    int source2 = 0;
+                    int source3 = 0;
                     reader3.Read();
-
-                    var source2 = Convert.ToInt32(reader3.GetInt32(2));
-                    var source3 = Convert.ToInt32(reader3.GetInt32(3));
+                    try
+                    {
+                        source2 = Convert.ToInt32(reader3.GetInt32(2));
+                        source3 = Convert.ToInt32(reader3.GetInt32(3));
+                    }
+                    catch { }
                     Console.WriteLine(source2);
                     Console.WriteLine(source3);
                     reader3.Dispose();
@@ -143,7 +256,7 @@ namespace app8
 
             }
         }
-}
+    }
 
 
 
